@@ -50,16 +50,15 @@ bool QtFirebase::ready() const
 void QtFirebase::waitForFutureCompletion(firebase::FutureBase future)
 {
     static int count = 0;
-    qDebug() << self << "::waitForFutureCompletion" << "waiting for future" << &future << "completion. Initial status" << future.status();
-    while(future.status() == firebase::kFutureStatusPending) {
+	while(future.Status() == firebase::kFutureStatusPending) {
         QGuiApplication::processEvents();
         count++;
 
         if(count % 100 == 0)
-            qDebug() << count << "Future" << &future << "is still pending. Has current status" << future.status();
+			qDebug() << count << "Future" << &future << "is still pending. Has current status" << future.Status();
 
         if(count % 200 == 0) {
-            qDebug() << count << "Future" << &future << "is still pending. Something is probably wrong. Breaking wait cycle. Current status" << future.status();
+			qDebug() << count << "Future" << &future << "is still pending. Something is probably wrong. Breaking wait cycle. Current status" << future.Status();
             count = 0;
             break;
         }
@@ -67,15 +66,15 @@ void QtFirebase::waitForFutureCompletion(firebase::FutureBase future)
     }
     count = 0;
 
-    if(future.status() == firebase::kFutureStatusComplete) {
+	if(future.Status() == firebase::kFutureStatusComplete) {
        qDebug() << self << "::waitForFutureCompletion" << "ended with COMPLETE";
     }
 
-    if(future.status() == firebase::kFutureStatusInvalid) {
+	if(future.Status() == firebase::kFutureStatusInvalid) {
        qDebug() << self << "::waitForFutureCompletion" << "ended with INVALID";
     }
 
-    if(future.status() == firebase::kFutureStatusPending) {
+	if(future.Status() == firebase::kFutureStatusPending) {
        qDebug() << self << "::waitForFutureCompletion" << "ended with PENDING";
     }
 }
@@ -145,7 +144,7 @@ void QtFirebase::processEvents()
     QMutableMapIterator<QString, firebase::FutureBase> i(_futureMap);
     while (i.hasNext()) {
         i.next();
-        if(i.value().status() != firebase::kFutureStatusPending) {
+		if(i.value().Status() != firebase::kFutureStatusPending) {
             qDebug() << self << "::processEvents" << "future event" << i.key();
             //if(_futureMap.remove(i.key()) >= 1) //QMap holds only one key. Use QMultiMap for multiple keys.
             const auto key = i.key();
