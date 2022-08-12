@@ -10,20 +10,20 @@ jobject PlatformUtils::nativeWindow = nullptr;
 #if defined(Q_OS_ANDROID)
 GooglePlayServices::Availability GooglePlayServices::getAvailability()
 {
-    QAndroidJniEnvironment env;
-    QAndroidJniObject activity = QtAndroid::androidActivity();
+    QJniEnvironment env;
+    QJniObject  activity = QNativeInterface::QAndroidApplication::context();
 
-    auto availablity = ::google_play_services::CheckAvailability(env, activity.object());
+    auto availablity = ::google_play_services::CheckAvailability(env.jniEnv(), activity.object());
     qDebug() << "GooglePlayServices::getAvailability result :" << availablity << " (0 is kAvailabilityAvailable)";
     return Availability(availablity);
 }
 
 bool GooglePlayServices::available()
 {
-    QAndroidJniEnvironment env;
-    QAndroidJniObject activity = QtAndroid::androidActivity();
+    QJniEnvironment env;
+    QJniObject  activity = QNativeInterface::QAndroidApplication::context();
 
-    auto availablity = ::google_play_services::CheckAvailability(env, activity.object());
+    auto availablity = ::google_play_services::CheckAvailability(env.jniEnv(), activity.object());
     qDebug() << "GooglePlayServices::available() result :" << availablity << " (0 is kAvailabilityAvailable)";
     return ::google_play_services::kAvailabilityAvailable == availablity;
 }
@@ -35,9 +35,9 @@ bool GooglePlayServices::available()
 #if defined(Q_OS_ANDROID)
 jobject PlatformUtils::getNativeWindow()
 {
-    QAndroidJniEnvironment env;
+    QJniEnvironment env;
 
-    QAndroidJniObject activity = QtAndroid::androidActivity();
+    QJniObject  activity = QNativeInterface::QAndroidApplication::context();
 
     if (!nativeWindow) {
         nativeWindow = env->NewGlobalRef(activity.object());
