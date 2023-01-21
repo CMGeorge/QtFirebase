@@ -45,5 +45,9 @@ DISTFILES += \
 android|ios {
     include(qtfirebase_target.pri)
 } else {
-    include(stub/qtfirebase_stub.pri)
+    contains(QTFIREBASE_CONFIG,"desktop") {
+        include(qtfirebase_target.pri)
+    } else {
+        include(stub/qtfirebase_stub.pri)
+    }
 }

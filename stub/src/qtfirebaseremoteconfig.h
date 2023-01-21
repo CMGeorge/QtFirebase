@@ -1,74 +1,71 @@
 #ifndef QTFIREBASE_REMOTE_CONFIG_H
 #define QTFIREBASE_REMOTE_CONFIG_H
 
-#include <QObject>
-
 #ifdef QTFIREBASE_BUILD_REMOTE_CONFIG
 
-#include "qtfirebase.h"
+#include "src/qtfirebase.h"
+
+#include <QObject>
+#include <QVariant>
 #include <QVariantMap>
 
-#if defined(qFirebaseRemoteConfig)
+#ifdef qFirebaseRemoteConfig
 #undef qFirebaseRemoteConfig
 #endif
-#define qFirebaseRemoteConfig (static_cast<QtFirebaseRemoteConfig *>(QtFirebaseRemoteConfig::instance()))
+#define qFirebaseRemoteConfig (QtFirebaseRemoteConfig::instance())
 
 class QtFirebaseRemoteConfig : public QObject
 {
     Q_OBJECT
+    Q_DISABLE_COPY(QtFirebaseRemoteConfig)
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
-    Q_PROPERTY(QVariantMap parameters READ parameters WRITE setParameters NOTIFY parametersChanged)
+    Q_PROPERTY(bool fetching READ fetching NOTIFY fetchingChanged)
     Q_PROPERTY(quint64 cacheExpirationTime READ cacheExpirationTime WRITE setCacheExpirationTime NOTIFY cacheExpirationTimeChanged)
+    Q_PROPERTY(QVariantMap parameters READ parameters WRITE setParameters NOTIFY parametersChanged)
 
+    static QtFirebaseRemoteConfig *self;
 public:
-    enum FetchFailure
-    {
-        FetchFailureReasonInvalid,
-        FetchFailureReasonThrottled,
-        FetchFailureReasonError,
-    };
-    Q_ENUM(FetchFailure)
+    static QtFirebaseRemoteConfig *instance(QObject *parent = nullptr) {
+        if (!self)
+            self = new QtFirebaseRemoteConfig(parent);
+        return self;
+    }
 
-    explicit QtFirebaseRemoteConfig(QObject *parent = nullptr){ Q_UNUSED(parent) }
+    static bool checkInstance(const char *function = nullptr) { Q_UNUSED(function) return self; }
 
-    ~QtFirebaseRemoteConfig() {}
+    explicit QtFirebaseRemoteConfig(QObject *parent = nullptr) : QObject(parent) { }
+    virtual ~QtFirebaseRemoteConfig() { }
 
-    static QtFirebaseRemoteConfig *instance() {
-            if(self == nullptr) {
-                self = new QtFirebaseRemoteConfig(nullptr);
-            }
-            return self;
-        }
+    bool ready() const { return false; }
+    bool fetching() const { return false; }
+    quint64 cacheExpirationTime() const { return 0; }
+    QVariantMap parameters() const { return QVariantMap(); }
 
-    bool checkInstance(const char *function);
-    bool ready(){return false;}
+    void setCacheExpirationTime(quint64) { }
+    void setParameters(const QVariantMap &) { }
 
-    QVariantMap parameters() const{return QVariantMap();}
-    void setParameters(const QVariantMap& map){ Q_UNUSED(map) }
-
-    quint64 cacheExpirationTime() const{return 0;}
-    void setCacheExpirationTime(quint64 timeMs){ Q_UNUSED(timeMs) }
+    Q_INVOKABLE QVariant getParameterValue(const QString &) const { return QVariant(); }
 
 public slots:
-    void addParameter(const QString &name, long long defaultValue){ Q_UNUSED(name) Q_UNUSED(defaultValue) }
-    void addParameter(const QString &name, double defaultValue){ Q_UNUSED(name) Q_UNUSED(defaultValue) }
-    void addParameter(const QString &name, const QString& defaultValue){ Q_UNUSED(name) Q_UNUSED(defaultValue) }
-    void addParameter(const QString &name, bool defaultValue){ Q_UNUSED(name) Q_UNUSED(defaultValue) }
-    QVariant getParameterValue(const QString) const{ return QString(); }
+    void addParameter(const QString &, bool) { }
+    void addParameter(const QString &, long long) { }
+    void addParameter(const QString &, double) { }
+    void addParameter(const QString &, const QString &) { }
 
-    void fetch(){}
-    void fetchNow(){}
-
+    void fetchNow() { }
+    void fetch() { }
 signals:
-    void readyChanged();
-    void error(int code, QString message);
-    void parametersChanged();
-    void cacheExpirationTimeChanged();
 
-private:
-    static QtFirebaseRemoteConfig *self;
-    Q_DISABLE_COPY(QtFirebaseRemoteConfig)
+    void readyChanged();
+    void fetchingChanged();
+    void cacheExpirationTimeChanged();
+    void parametersChanged();
+
+    void googlePlayServicesError(); ///< For Firebase CPP SDK < 8.0.0 only
+
+    void futuresError(int code, QString message); ///< System error.
+    void error(int code, QString message); ///< Error of last fetch.
 };
 
-#endif //QTFIREBASE_BUILD_REMOTE_CONFIG
+#endif // QTFIREBASE_BUILD_REMOTE_CONFIG
 #endif // QTFIREBASE_REMOTE_CONFIG_H
