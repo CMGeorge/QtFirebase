@@ -13,7 +13,7 @@ isEmpty(QTFIREBASE_GIT_VERSION) {
 QTFIREBASE_GIT_BRANCH = ""
 
 # Need to discard STDERR so get path to NULL device
-win32 {
+contains(QMAKE_HOST.os,Windows) {
     NULL_DEVICE = NUL # Windows doesn't have /dev/null but has NUL
 } else {
     NULL_DEVICE = /dev/null

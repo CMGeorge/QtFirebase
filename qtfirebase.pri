@@ -37,7 +37,6 @@ contains(QTFIREBASE_CONFIG,"database") {
     DEFINES += QTFIREBASE_BUILD_DATABASE
 }
 
-
 DISTFILES += \
     $$PWD/LICENSE \
     $$PWD/README.md
