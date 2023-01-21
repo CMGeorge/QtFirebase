@@ -83,8 +83,33 @@ void QtFirebase::addFuture(const QString &eventId, const firebase::FutureBase &f
 
 void QtFirebase::waitForFutureCompletion(firebase::FutureBase future)
 {
+	//INFO: This came for other person and other branch...
     qDebug() << self << "::waitForFutureCompletion waiting for future";
 
+    if(!PlatformUtils::getNativeWindow()) {
+        qDebug() << self << "::requestInit" << "no native UI pointer";
+        return;
+    }
+
+    if(!_ready) {
+
+        #if defined(Q_OS_ANDROID)
+
+        jobject activity = PlatformUtils::getNativeWindow();
+
+        QJniEnvironment env;
+
+        // Create the Firebase app.
+        _firebaseApp = firebase::App::Create(firebase::AppOptions(), env.jniEnv(), activity);
+
+        #else // Q_OS_ANDROID
+
+        // Create the Firebase app.
+        _firebaseApp = firebase::App::Create();
+
+        #endif
+		
+	qDebug() << self << "::waitForFutureCompletion waiting for future";
     int count = 0;
     while (future.status() == firebase::kFutureStatusPending) {
         QGuiApplication::processEvents();
