@@ -31,3 +31,5 @@ unix {
     target.path = $$installPath
     INSTALLS += target qmldir
 }
+
+OTHER_FILES += Readme.md
