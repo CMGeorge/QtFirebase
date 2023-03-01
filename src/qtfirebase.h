@@ -1,19 +1,14 @@
 #ifndef QTFIREBASE_H
 #define QTFIREBASE_H
 
+#if defined(qFirebase)
+#undef qFirebase
+#endif
+#define qFirebase (static_cast<QtFirebase *>(QtFirebase::instance()))
+
 #include "platformutils.h"
 
-#include <firebase/version.h>
-#include <firebase/app.h>
-#include <firebase/future.h>
-#include <firebase/util.h>
-
-#include <QObject>
-#include <QGuiApplication>
-#include <QThread>
-#include <QTimer>
-#include <QMap>
-#include <QHash>
+#include "firebase/version.h"
 
 // Like the QT_VERSION
 #define QTFIREBASE_FIREBASE_VERSION QTFIREBASE_FIREBASE_VERSION_CHECK(\
@@ -25,48 +20,61 @@ FIREBASE_VERSION_REVISION\
 // Like the QT_VERSION_CHECK
 #define QTFIREBASE_FIREBASE_VERSION_CHECK(major, minor, patch) ((major<<16)|(minor<<8)|(patch))
 
-#if defined(qFirebase)
-#undef qFirebase
-#endif
-#define qFirebase (QtFirebase::instance())
+#include "firebase/app.h"
+#include "firebase/future.h"
+#include "firebase/util.h"
+
+#include <QMap>
+#include <QObject>
+#include <QTimer>
+#include <QGuiApplication>
 
 class QtFirebase : public QObject
 {
     Q_OBJECT
-    Q_DISABLE_COPY(QtFirebase)
 
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
 
-    static QtFirebase *self;
 public:
-    static QtFirebase *instance(QObject *parent = nullptr) {
-        if (!self)
-            self = new QtFirebase(parent);
+    explicit QtFirebase(QObject* parent = nullptr);
+    ~QtFirebase();
+
+    static QtFirebase *instance() {
+        if(!self)
+            self = new QtFirebase();
         return self;
     }
 
-    static bool checkInstance(const char *function = nullptr) { Q_UNUSED(function) return self; }
+    bool ready() const;
 
-    explicit QtFirebase(QObject *parent = nullptr);
-    virtual ~QtFirebase();
-    bool ready() const { return _firebaseApp; }
-    firebase::App *firebaseApp() const { return _firebaseApp; }
+    static void waitForFutureCompletion(firebase::FutureBase future);
+    bool checkInstance(const char *function);
+
+    firebase::App* firebaseApp() const;
 
     // TODO make protected and have friend classes?
-    void addFuture(const QString &eventId, const firebase::FutureBase &);
-    static void waitForFutureCompletion(firebase::FutureBase);
-public slots:
-    void requestInit() { requestInitInternal(false); }  // Calls from QtFirebase's modules
+    void addFuture(const QString &eventId, const firebase::FutureBase &future);
+
 signals:
     void readyChanged();
+
     void futureEvent(const QString &eventId, firebase::FutureBase future);
 
-private:
-    void requestInitInternal(bool repeat = true);
+public slots:
+    void requestInit();
+    void processEvents();
 
 private:
-    firebase::App *_firebaseApp = nullptr;
-    QHash<QString, firebase::FutureBase> _futures;
+    static QtFirebase *self;
+    Q_DISABLE_COPY(QtFirebase)
+
+    bool _ready = false;
+    firebase::App* _firebaseApp = nullptr;
+
+    QTimer *_initTimer = nullptr;
+
+    QTimer *_futureWatchTimer = nullptr;
+    QMap<QString, firebase::FutureBase> _futureMap;
 };
 
 #endif // QTFIREBASE_H

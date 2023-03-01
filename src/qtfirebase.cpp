@@ -1,91 +1,110 @@
 #include "qtfirebase.h"
 
-#define QTFIREBASE_REQUEST_INIT QTimer::singleShot(1000, this, [ this ] { requestInitInternal(true); })
+#include <QMutableMapIterator>
+#include <QThread>
 
-QtFirebase *QtFirebase::self { nullptr };
+QtFirebase *QtFirebase::self = nullptr;
 
-QtFirebase::QtFirebase(QObject *parent)
-    : QObject(parent)
+QtFirebase::QtFirebase(QObject* parent) : QObject(parent)
 {
-    // deny multiple instances
-    Q_ASSERT(!self);
-    if (self)
-        return;
-    self = this;
+    _ready = false;
+
+    qDebug() << self << ":QtFirebase(QObject* parent)" ;
+
+    Q_ASSERT_X(!self, "QtFirebase", "there should be only one firebase object");
+    QtFirebase::self = this;
 
     // NOTE where having trouble getting a valid UIView pointer using just signals.
     // So this is a hack that let's us check the pointer every 1 seconds during startup.
     // We should probably set a limit to how many checks should be done before giving up?
-    // connect(qGuiApp, &QGuiApplication::focusWindowChanged, this, &QtFirebase::requestInit); // <-- Crashes on iOS
+    //connect(qGuiApp,&QGuiApplication::focusWindowChanged, this, &QtFirebase::init); // <-- Crashes on iOS
+    _initTimer = new QTimer(self);
+    _initTimer->setSingleShot(false);
+    connect(_initTimer, &QTimer::timeout, self, &QtFirebase::requestInit);
+    _initTimer->start(1000);
 
-    QTFIREBASE_REQUEST_INIT;
+    _futureWatchTimer = new QTimer(self);
+    _futureWatchTimer->setSingleShot(false);
+    connect(_futureWatchTimer, &QTimer::timeout, self, &QtFirebase::processEvents);
 }
 
 QtFirebase::~QtFirebase()
 {
-    // delete _firebaseApp?
-
-    // check this instance is legal
-    if (self == this)
-        self = nullptr;
+    self = nullptr;
+    //delete _firebaseApp;
 }
 
-void QtFirebase::requestInitInternal(bool repeat)
+bool QtFirebase::checkInstance(const char *function)
 {
-    if (_firebaseApp)
-        return;
-
-    const auto retry = [ = ] { if (repeat) QTFIREBASE_REQUEST_INIT; };
-
-    const auto p = PlatformUtils::getNativeWindow();
-    if (!p) {
-        qDebug() << this << "no native UI pointer";
-        return retry();
-    }
-
-#ifdef Q_OS_ANDROID
-    QAndroidJniEnvironment env;
-
-    _firebaseApp = firebase::App::Create(firebase::AppOptions(), env, p);
-#else
-    _firebaseApp = firebase::App::Create();
-#endif
-    if (!_firebaseApp) {
-        qWarning() << this << "failed to create Firebase App";
-        return retry();
-    }
-    qDebug() << this << "created Firebase App" << _firebaseApp;
-    emit readyChanged();
+    bool b = (QtFirebase::self != nullptr);
+    if (!b)
+        qWarning("QtFirebase::%s: Please instantiate the QtFirebase object first", function);
+    return b;
 }
 
-void QtFirebase::addFuture(const QString &eventId, const firebase::FutureBase &future)
+bool QtFirebase::ready() const
 {
-    if (_futures.contains(eventId))
-        qWarning() << this << "::addFuture already contains" << eventId;
-    _futures[eventId] = future;
-    qDebug() << this << "::addFuture added" << eventId;
-
-    qDebug() << this << "::addFuture watch" << eventId;
-
-    future.OnCompletion([ this, eventId ](const firebase::FutureBase &) {
-        // callback may be in different thread
-        QTimer::singleShot(0, qFirebase, [ this, eventId ] {
-            Q_ASSERT(_futures.contains(eventId));
-            if (!_futures.contains(eventId))
-                return;
-
-            const auto future = _futures.take(eventId);
-            qDebug() << this << "::addFuture ready" << eventId;
-            emit futureEvent(eventId, future);
-        });
-    });
+    return _ready;
 }
 
 void QtFirebase::waitForFutureCompletion(firebase::FutureBase future)
 {
-	//INFO: This came for other person and other branch...
-    qDebug() << self << "::waitForFutureCompletion waiting for future";
+    static int count = 0;
+    qDebug() << self << "::waitForFutureCompletion" << "waiting for future" << &future << "completion. Initial status" << future.status();
+    while(future.status() == firebase::kFutureStatusPending) {
+        QGuiApplication::processEvents();
+        count++;
 
+        if(count % 100 == 0)
+            qDebug() << count << "Future" << &future << "is still pending. Has current status" << future.status();
+
+        if(count % 200 == 0) {
+            qDebug() << count << "Future" << &future << "is still pending. Something is probably wrong. Breaking wait cycle. Current status" << future.status();
+            count = 0;
+            break;
+        }
+        QThread::msleep(10);
+    }
+    count = 0;
+
+    if(future.status() == firebase::kFutureStatusComplete) {
+        qDebug() << self << "::waitForFutureCompletion" << "ended with COMPLETE";
+    }
+
+    if(future.status() == firebase::kFutureStatusInvalid) {
+        qDebug() << self << "::waitForFutureCompletion" << "ended with INVALID";
+    }
+
+    if(future.status() == firebase::kFutureStatusPending) {
+        qDebug() << self << "::waitForFutureCompletion" << "ended with PENDING";
+    }
+}
+
+firebase::App* QtFirebase::firebaseApp() const
+{
+    return _firebaseApp;
+}
+
+void QtFirebase::addFuture(const QString &eventId, const firebase::FutureBase &future)
+{
+    qDebug() << self << "::addFuture" << "adding" << eventId;
+
+    if (_futureMap.contains(eventId))
+    {
+        qWarning() << "_futureMap already contains '" << eventId << "'.";
+    }
+
+    _futureMap.insert(eventId,future);
+
+    //if(!_futureWatchTimer->isActive()) {
+    qDebug() << self << "::addFuture" << "starting future watch";
+    _futureWatchTimer->start(1000);
+    //}
+
+}
+
+void QtFirebase::requestInit()
+{
     if(!PlatformUtils::getNativeWindow()) {
         qDebug() << self << "::requestInit" << "no native UI pointer";
         return;
@@ -93,42 +112,56 @@ void QtFirebase::waitForFutureCompletion(firebase::FutureBase future)
 
     if(!_ready) {
 
-        #if defined(Q_OS_ANDROID)
+#if defined(Q_OS_ANDROID)
 
         jobject activity = PlatformUtils::getNativeWindow();
 
-        QJniEnvironment env;
+        QAndroidJniEnvironment env;
 
         // Create the Firebase app.
-        _firebaseApp = firebase::App::Create(firebase::AppOptions(), env.jniEnv(), activity);
+        _firebaseApp = firebase::App::Create(firebase::AppOptions(), env, activity);
 
-        #else // Q_OS_ANDROID
+#else // Q_OS_ANDROID
 
         // Create the Firebase app.
         _firebaseApp = firebase::App::Create();
 
-        #endif
-		
-	qDebug() << self << "::waitForFutureCompletion waiting for future";
-    int count = 0;
-    while (future.status() == firebase::kFutureStatusPending) {
-        QGuiApplication::processEvents();
-        count++;
-        if (!(count % 100))
-            qDebug().noquote() << self << "future is still pending";
-        if (!(count % 200)) {
-            qDebug() << self << "something is probably wrong, breaking wait cycle";
+#endif
 
-            break;
+        qDebug("QtFirebase::requestInit created the Firebase App (%x)",static_cast<int>(reinterpret_cast<intptr_t>(_firebaseApp)));
+
+        _initTimer->stop();
+        delete _initTimer;
+
+        _ready = true;
+        qDebug() << self << "::requestInit" << "initialized";
+        emit readyChanged();
+    }
+}
+
+void QtFirebase::processEvents()
+{
+    qDebug() << self << "::processEvents" << "processing events";
+    QMutableMapIterator<QString, firebase::FutureBase> i(_futureMap);
+    while (i.hasNext()) {
+        i.next();
+        if(i.value().status() != firebase::kFutureStatusPending) {
+            qDebug() << self << "::processEvents" << "future event" << i.key();
+            //if(_futureMap.remove(i.key()) >= 1) //QMap holds only one key. Use QMultiMap for multiple keys.
+            const auto key = i.key();
+            const auto value = i.value();
+            i.remove();
+            qDebug() << self << "::processEvents" << "removed future event" << key;
+            emit futureEvent(key, value);
+            // To easen events up:
+            //break;
         }
-        QThread::msleep(10);
+
     }
 
-    const auto status = future.status();
-    if (status == firebase::kFutureStatusComplete)
-        qDebug() << self << "::waitForFutureCompletion ended with COMPLETE";
-    else if (status == firebase::kFutureStatusInvalid)
-        qDebug() << self << "::waitForFutureCompletion ended with INVALID";
-    else if (status == firebase::kFutureStatusPending)
-        qDebug() << self << "::waitForFutureCompletion ended with PENDING";
+    if(_futureMap.isEmpty()) {
+        qDebug() << self << "::processEvents" << "stopping future watch";
+        _futureWatchTimer->stop();
+    }
+
 }
