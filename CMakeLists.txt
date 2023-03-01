@@ -62,10 +62,12 @@ set(HEADER_FILES "")
 set(EXTRA_LIBS "")
 
 #Prepare definitions
-if (NoAutoRegister)
-    message(STATUS "Will not use auto regiter")
+if (NOT NoAutoRegister)
+    message(STATUS "Will use auto registration for QML")
     add_definitions(-DQTFIREBASE_AUTO_REGISTER)
     LIST(APPEND extra_sources "${CMAKE_CURRENT_SOURCE_DIR}/qtfirebase_register.cpp")
+else()
+    message(STATUS "Will NOT use auto registration for QML")
 endif()
 
 if (Analytics)
