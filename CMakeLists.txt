@@ -1,4 +1,57 @@
 cmake_minimum_required(VERSION 3.24)
+
+function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
+  # Set the path to the XCFramework
+  set(XCFRAMEWORK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
+
+  # Add the XCFramework to the link directories for all architectures
+  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+    link_directories(${XCFRAMEWORK_PATH}/${arch})
+  endforeach()
+
+  # Add the header search path for all architectures
+  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+      "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
+    )
+    # Add the framework directory to the include path
+    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+      "${XCFRAMEWORK_PATH}/${arch}"
+    )
+  endforeach()
+
+  # Link against the XCFramework for all architectures
+  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+    target_link_libraries(${TARGET_NAME} PRIVATE
+      "-framework" "${FRAMEWORK_NAME}"
+      "-F${XCFRAMEWORK_PATH}"
+      "-arch" "${arch}"
+    )
+  endforeach()
+
+
+  add_library(${FRAMEWORK_NAME} SHARED IMPORTED)
+
+  # Set the path to the framework
+  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
+      IMPORTED_LOCATION ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}
+  )
+
+  # Set the include directories for the framework
+  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers
+  )
+
+  # Link the target to your executable or library
+  target_link_libraries(${TARGET_NAME} PRIVATE ${FRAMEWORK_NAME})
+  message("Include: ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers")
+
+endfunction()
+
+
+
+
+
 set(QTFIREBASE_VERSION 1.5.0)
 set(CMAKE_FIREBASE_SDK_PATH "")
 project(
@@ -44,15 +97,17 @@ if (NOT CMAKE_FIREBASE_SDK_PATH)
     set(CMAKE_FIREBASE_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/FirebaseSDK")
     set(QTFIREBASE_SDK_LIBS_PREFIX "firebase_")
     Set(FETCHCONTENT_QUIET FALSE)
+#    if (NOT EXISTS "${CMAKE_FIREBASE_SDK_PATH}")
     FetchContent_Declare(
         FirebaseSDK
         URL "https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_10.5.0.zip"
         DOWNLOAD_EXTRACT_TIMESTAMP OLD
         SOURCE_DIR ${CMAKE_FIREBASE_SDK_PATH}
+        UPDATE_DISCONNECTED
     )
-    FetchContent_MakeAvailable(FirebaseSDK)
-#    FetchContent_GetProperties(FirebaseSDKFromGoogle)
-    message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_VERSION}")
+#    FetchContent_MakeAvailable(FirebaseSDK)
+
+message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_VERSION}")
     message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_FIREBASE_SDK_LIBDIR}")
 endif()
 
@@ -171,9 +226,16 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/platformutils.mm
         )
 endif()
+
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+#TODO: Construct version from project version major+minor
+#also maybe is not ok this there.. shoukd be removed...
+add_library(QtFirebase)
 if (IOS)
-    message("QtFirebase iOS base")
+
     set(IOS_FIREBASE_FRAMEWORK ${CMAKE_SOURCE_DIR}/external/ios/firebase)
+    message("QtFirebase iOS base. If you did not complete the framework download remove ${IOS_FIREBASE_FRAMEWORK} to redeownload")
     if (NOT EXISTS "${IOS_FIREBASE_FRAMEWORK}")
         FetchContent_Declare(
             IOSFirebaseFramework
@@ -183,11 +245,32 @@ if (IOS)
         )
         FetchContent_MakeAvailable(IOSFirebaseFramework)
     endif()
+    target_link_options(QtFirebase PRIVATE -ObjC)
+    LIST(APPEND
+        HEADER_FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/AppDelegate.h
+    )
+    LIST(APPEND
+        SOURCE_FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/platformutils.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/AppDelegate.mm
+    )
+    LIST(APPEND
+        EXTRA_LIBS
+            ObjC
+            sqlite3
+            z
+
+    )
+    message("Extra include directory ${IOS_FIREBASE_FRAMEWORK}")
+    include_directories(
+        ${IOS_FIREBASE_FRAMEWORK}
+        ${IOS_FIREBASE_FRAMEWORK}/..
+    )
+
 else()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-#TODO: Construct version from project version major+minor
 qt6_add_qml_module(QtFirebase
     URI "ro.wesell.firebase"
     VERSION 1.0
@@ -196,7 +279,6 @@ qt6_add_qml_module(QtFirebase
         "${SOURCE_FILES}"
         "${extra_sources}"
 )
-
 target_link_libraries(QtFirebase PRIVATE
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Qml
@@ -207,6 +289,19 @@ target_link_libraries(QtFirebase PUBLIC
     firebase_app
     ${EXTRA_LIBS}
 )
-
+add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCore)
+target_link_libraries(QtFirebase PRIVATE
+-framework MediaPlayer
+-framework CoreMotion
+-framework CoreTelephony
+-framework MessageUI
+-framework GLKit
+-framework AddressBook
+-framework UIKit
+-framework SystemConfiguration
+)
 message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 #add_dependencies(QtFirebase FirebaseSDKFromGoogle)
+
+
+
