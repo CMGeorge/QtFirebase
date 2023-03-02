@@ -49,6 +49,6 @@ jobject PlatformUtils::getNativeWindow()
 bool PlatformUtils::getNativeWindow()
 {
     qDebug() << Q_FUNC_INFO << "not implemented";
-    return true;
+    return false;
 }
 #endif
