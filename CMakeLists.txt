@@ -167,7 +167,7 @@ if (NOT IOS)
 else()
     LIST(APPEND
         SOURCE_FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/src/platformutils.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/platformutils.mm
         )
 endif()
 #TODO: Construct version from project version major+minor
