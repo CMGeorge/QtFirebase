@@ -11,6 +11,7 @@ set(CMAKE_AUTOMOC ON)
 set(QML_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Qt6
     REQUIRED COMPONENTS
+        Gui
         Qml
         Quick
 )
@@ -170,6 +171,7 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/platformutils.mm
         )
 endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #TODO: Construct version from project version major+minor
 qt6_add_qml_module(QtFirebase
     URI "ro.wesell.firebase"
@@ -183,6 +185,7 @@ qt6_add_qml_module(QtFirebase
 target_link_libraries(QtFirebase PRIVATE
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::GuiPrivate
     firebase_app
     ${EXTRA_LIBS}
 )
