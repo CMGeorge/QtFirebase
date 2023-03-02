@@ -171,6 +171,21 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/src/ios/platformutils.mm
         )
 endif()
+if (IOS)
+    message("QtFirebase iOS base")
+    set(IOS_FIREBASE_FRAMEWORK ${CMAKE_SOURCE_DIR}/external/ios/firebase)
+    if (NOT EXISTS "${IOS_FIREBASE_FRAMEWORK}")
+        FetchContent_Declare(
+            IOSFirebaseFramework
+            URL https://firebase.google.com/download/ios
+            DOWNLOAD_EXTRACT_TIMESTAMP OLD
+            SOURCE_DIR ${IOS_FIREBASE_FRAMEWORK}
+        )
+        FetchContent_MakeAvailable(IOSFirebaseFramework)
+    endif()
+else()
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #TODO: Construct version from project version major+minor
 qt6_add_qml_module(QtFirebase
@@ -186,7 +201,12 @@ target_link_libraries(QtFirebase PRIVATE
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::GuiPrivate
+
+)
+target_link_libraries(QtFirebase PUBLIC
     firebase_app
     ${EXTRA_LIBS}
 )
+
+message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 #add_dependencies(QtFirebase FirebaseSDKFromGoogle)
