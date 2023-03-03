@@ -1,8 +1,27 @@
 cmake_minimum_required(VERSION 3.24)
 SET(FIREBASE_VERSION "10.3.0")
+
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+# As moc files are generated in the binary dir, tell CMake
+# to always look for includes there:
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin")
+
+#Should be added in target (and checked as Target Memembersip to fix Swift inclusion error
+set(EMPTY_SWIFT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Helper.swift)
+
+option(BUILD_SHARED_LIBS "Build in shared lib mode" OFF)
+
+SET(FIREBASE_IOS_SDK "${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase")
+SET(FIREBASE_IOS_SDK_VERSIONED "${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase-${FIREBASE_VERSION}")
 function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
   # Set the path to the XCFramework
-  set(XCFRAMEWORK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
+  set(XCFRAMEWORK_PATH "${FIREBASE_IOS_SDK}/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
 
   # Add the XCFramework to the link directories for all architectures
   foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
@@ -50,8 +69,6 @@ endfunction()
 
 
 
-
-
 set(QTFIREBASE_VERSION 1.5.0)
 set(CMAKE_FIREBASE_SDK_PATH "")
 project(
@@ -94,13 +111,14 @@ set_property(CACHE Database PROPERTY TYPE BOOL)
 include(FetchContent)
 if (NOT CMAKE_FIREBASE_SDK_PATH)
     message("Retrieving firebase sdk first...")
-    set(CMAKE_FIREBASE_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/FirebaseSDK")
+    set(CMAKE_FIREBASE_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/FirebaseSDK-${FIREBASE_VERSION}")
     set(QTFIREBASE_SDK_LIBS_PREFIX "firebase_")
     Set(FETCHCONTENT_QUIET FALSE)
 #    if (NOT EXISTS "${CMAKE_FIREBASE_SDK_PATH}")
     FetchContent_Declare(
         FirebaseSDK
         URL "https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_${FIREBASE_VERSION}.zip"
+        URL_HASH SHA256=c0d1c0f7ace29603379cdb10bf71b2cebf240acd330b7d1882528f2d67c51c66
         DOWNLOAD_EXTRACT_TIMESTAMP OLD
         SOURCE_DIR ${CMAKE_FIREBASE_SDK_PATH}
         UPDATE_DISCONNECTED
@@ -200,7 +218,7 @@ endif()
 
 #find_package(FirebaseSDK)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 
 message("We have FIREBASE SDK At ${firebasesdkfromgoogle_VERSION}")
 include_directories(${CMAKE_FIREBASE_SDK_PATH}/include)
@@ -234,17 +252,28 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #also maybe is not ok this there.. shoukd be removed...
 add_library(QtFirebase)
 if (IOS)
+#    set_target_properties(${PROJECT_NAME} PROPERTIES
+#            XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/QtFirebase-Bridging-Header.h"
+#    #        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "${CMAKE_CURRENT_SOURCE_DIR}/Helper.swift"
+#    #        XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${A_DIR_MODULE_ROOT}/aswiftbridging.h"
+#            XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
+#            XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES "YES"
+#            XCODE_ATTRIBUTE_SWIFT_VERSION "5.0"
+#            SOURCES
+#                ${CMAKE_CURRENT_SOURCE_DIR}/Helper.swift
+#    )
 
-    set(IOS_FIREBASE_FRAMEWORK ${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase)
-    message("QtFirebase iOS base. If you did not complete the framework download remove ${IOS_FIREBASE_FRAMEWORK} to redeownload")
-    if (NOT EXISTS "${IOS_FIREBASE_FRAMEWORK}")
+    message("QtFirebase iOS base. If you did not complete the framework download remove ${FIREBASE_IOS_SDK_VERSIONED} to redeownload")
+    if (NOT EXISTS "${FIREBASE_IOS_SDK_VERSIONED}")
         FetchContent_Declare(
             IOSFirebaseFramework
             URL https://github.com/firebase/firebase-ios-sdk/releases/download/${FIREBASE_VERSION}/Firebase.zip
             DOWNLOAD_EXTRACT_TIMESTAMP OLD
-            SOURCE_DIR ${IOS_FIREBASE_FRAMEWORK}
+            SOURCE_DIR ${FIREBASE_IOS_SDK_VERSIONED}
         )
         FetchContent_MakeAvailable(IOSFirebaseFramework)
+        file(CREATE_LINK ${FIREBASE_IOS_SDK_VERSIONED} ${FIREBASE_IOS_SDK} SYMBOLIC)
+
     endif()
     target_link_options(QtFirebase PRIVATE -ObjC)
     LIST(APPEND
@@ -263,10 +292,10 @@ if (IOS)
             z
 
     )
-    message("Extra include directory ${IOS_FIREBASE_FRAMEWORK}")
+    message("Extra include directory ${FIREBASE_IOS_SDK}")
     include_directories(
-        ${IOS_FIREBASE_FRAMEWORK}
-        ${IOS_FIREBASE_FRAMEWORK}/..
+        ${FIREBASE_IOS_SDK}
+        ${FIREBASE_IOS_SDK}/..
     )
 
 else()
@@ -305,17 +334,18 @@ add_xcframework_to_target(QtFirebase FirebaseMessaging GoogleDataTransport)
 add_xcframework_to_target(QtFirebase FirebaseMessaging FirebaseMessaging)
 
 #Analityrcs
+add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCoreInternal)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseAnalytics)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCore)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics FBLPromises)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics GoogleUtilities)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics nanopb)
-#add_xcframework_to_target(QtFirebase FirebaseAnalytics PromisesObjC)
+##add_xcframework_to_target(QtFirebase FirebaseAnalytics PromisesObjC)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseInstallations)
-add_xcframework_to_target(QtFirebase FirebaseAnalytics GoogleAppMeasurement)
+#add_xcframework_to_target(QtFirebase FirebaseAnalytics GoogleAppMeasurement)
 
-add_xcframework_to_target(QtFirebase FirebaseFunctions FirebaseCoreExtension)
-add_xcframework_to_target(QtFirebase FirebaseMessaging GoogleDataTransport)
+#add_xcframework_to_target(QtFirebase FirebaseFunctions FirebaseCoreExtension)
+#add_xcframework_to_target(QtFirebase FirebaseMessaging GoogleDataTransport)
 
 target_link_libraries(QtFirebase PRIVATE
     "-framework MediaPlayer"
@@ -332,3 +362,4 @@ message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 
 
 
+add_subdirectory(example)
