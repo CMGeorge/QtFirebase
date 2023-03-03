@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-
+SET(FIREBASE_VERSION "10.3.0")
 function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
   # Set the path to the XCFramework
   set(XCFRAMEWORK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
@@ -23,27 +23,27 @@ function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
   # Link against the XCFramework for all architectures
   foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
     target_link_libraries(${TARGET_NAME} PRIVATE
-      "-framework" "${FRAMEWORK_NAME}"
-      "-F${XCFRAMEWORK_PATH}"
-      "-arch" "${arch}"
+      "-framework ${FRAMEWORK_NAME}"
+      "-F${XCFRAMEWORK_PATH}/${arch}"
+#      "-arch" "${arch}"
     )
   endforeach()
 
 
-  add_library(${FRAMEWORK_NAME} SHARED IMPORTED)
+#  add_library(${FRAMEWORK_NAME} SHARED IMPORTED)
 
-  # Set the path to the framework
-  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
-      IMPORTED_LOCATION ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}
-  )
+#  # Set the path to the framework
+#  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
+#      IMPORTED_LOCATION ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}
+#  )
 
-  # Set the include directories for the framework
-  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers
-  )
+#  # Set the include directories for the framework
+#  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
+#      INTERFACE_INCLUDE_DIRECTORIES ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers
+#  )
 
-  # Link the target to your executable or library
-  target_link_libraries(${TARGET_NAME} PRIVATE ${FRAMEWORK_NAME})
+#  # Link the target to your executable or library
+#  target_link_libraries(${TARGET_NAME} PRIVATE ${FRAMEWORK_NAME})
   message("Include: ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers")
 
 endfunction()
@@ -100,12 +100,12 @@ if (NOT CMAKE_FIREBASE_SDK_PATH)
 #    if (NOT EXISTS "${CMAKE_FIREBASE_SDK_PATH}")
     FetchContent_Declare(
         FirebaseSDK
-        URL "https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_10.5.0.zip"
+        URL "https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_${FIREBASE_VERSION}.zip"
         DOWNLOAD_EXTRACT_TIMESTAMP OLD
         SOURCE_DIR ${CMAKE_FIREBASE_SDK_PATH}
         UPDATE_DISCONNECTED
     )
-#    FetchContent_MakeAvailable(FirebaseSDK)
+    FetchContent_MakeAvailable(FirebaseSDK)
 
 message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_VERSION}")
     message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_FIREBASE_SDK_LIBDIR}")
@@ -144,6 +144,7 @@ if (Messaging)
     LIST(APPEND
         EXTRA_LIBS
             firebase_messaging
+            firebase_analytics
     )
 
 endif()
@@ -234,12 +235,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_library(QtFirebase)
 if (IOS)
 
-    set(IOS_FIREBASE_FRAMEWORK ${CMAKE_SOURCE_DIR}/external/ios/firebase)
+    set(IOS_FIREBASE_FRAMEWORK ${CMAKE_CURRENT_SOURCE_DIR}/external/ios/firebase)
     message("QtFirebase iOS base. If you did not complete the framework download remove ${IOS_FIREBASE_FRAMEWORK} to redeownload")
     if (NOT EXISTS "${IOS_FIREBASE_FRAMEWORK}")
         FetchContent_Declare(
             IOSFirebaseFramework
-            URL https://firebase.google.com/download/ios
+            URL https://github.com/firebase/firebase-ios-sdk/releases/download/${FIREBASE_VERSION}/Firebase.zip
             DOWNLOAD_EXTRACT_TIMESTAMP OLD
             SOURCE_DIR ${IOS_FIREBASE_FRAMEWORK}
         )
@@ -285,20 +286,46 @@ target_link_libraries(QtFirebase PRIVATE
     Qt${QT_VERSION_MAJOR}::GuiPrivate
 
 )
-target_link_libraries(QtFirebase PUBLIC
+target_link_libraries(QtFirebase PRIVATE
     firebase_app
+    firebase_functions
+#    firebase_performance
     ${EXTRA_LIBS}
 )
+#set_target_properties(QtFirebase PROPERTIES
+#    XCODE_ATTRIBUTE_MACH_O_TYPE "dynamiclib"
+#)
+#add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseAnalytics)
+#add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCore)
+
+#Messages
+#add_xcframework_to_target(QtFirebase FirebaseMessaging FirebaseInstanceID)
+#add_xcframework_to_target(QtFirebase FirebasePerformance Protobuf)
+add_xcframework_to_target(QtFirebase FirebaseMessaging GoogleDataTransport)
+add_xcframework_to_target(QtFirebase FirebaseMessaging FirebaseMessaging)
+
+#Analityrcs
+add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseAnalytics)
 add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCore)
+add_xcframework_to_target(QtFirebase FirebaseAnalytics FBLPromises)
+add_xcframework_to_target(QtFirebase FirebaseAnalytics GoogleUtilities)
+add_xcframework_to_target(QtFirebase FirebaseAnalytics nanopb)
+#add_xcframework_to_target(QtFirebase FirebaseAnalytics PromisesObjC)
+add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseInstallations)
+add_xcframework_to_target(QtFirebase FirebaseAnalytics GoogleAppMeasurement)
+
+add_xcframework_to_target(QtFirebase FirebaseFunctions FirebaseCoreExtension)
+add_xcframework_to_target(QtFirebase FirebaseMessaging GoogleDataTransport)
+
 target_link_libraries(QtFirebase PRIVATE
--framework MediaPlayer
--framework CoreMotion
--framework CoreTelephony
--framework MessageUI
--framework GLKit
--framework AddressBook
--framework UIKit
--framework SystemConfiguration
+    "-framework MediaPlayer"
+    "-framework UIKit"
+    "-framework CoreMotion"
+    "-framework CoreTelephony"
+    "-framework MessageUI"
+    "-framework GLKit"
+    "-framework AddressBook"
+    "-framework SystemConfiguration"
 )
 message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 #add_dependencies(QtFirebase FirebaseSDKFromGoogle)
