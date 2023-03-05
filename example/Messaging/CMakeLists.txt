@@ -44,7 +44,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtFirebase
     QtFirebaseplugin
     ${PROJECT_NAME}QML
-    ${PROJECT_NAME}QMLplugin
+#    ${PROJECT_NAME}QMLplugin
 )
 qt6_import_qml_plugins(${PROJECT_NAME}QML)
 add_dependencies(${PROJECT_NAME} QtFirebase)

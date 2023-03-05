@@ -315,6 +315,7 @@ target_link_libraries(QtFirebase PRIVATE
     Qt${QT_VERSION_MAJOR}::GuiPrivate
 
 )
+
 target_link_libraries(QtFirebase PRIVATE
     firebase_app
     firebase_functions
@@ -324,6 +325,7 @@ target_link_libraries(QtFirebase PRIVATE
 #set_target_properties(QtFirebase PROPERTIES
 #    XCODE_ATTRIBUTE_MACH_O_TYPE "dynamiclib"
 #)
+if (IOS)
 #add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseAnalytics)
 #add_xcframework_to_target(QtFirebase FirebaseAnalytics FirebaseCore)
 
@@ -357,6 +359,7 @@ target_link_libraries(QtFirebase PRIVATE
     "-framework AddressBook"
     "-framework SystemConfiguration"
 )
+endif()
 message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 #add_dependencies(QtFirebase FirebaseSDKFromGoogle)
 
