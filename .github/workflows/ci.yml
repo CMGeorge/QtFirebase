@@ -16,10 +16,9 @@ jobs:
         cd ..
         WROOT=$(readlink -f .)
       env:
-        ANDROID_SDK_HOME:${WROOT}/sd
         #echo "::set-env name=WORK::${WROOT}"
-        #echo "::set-env name=ANDROID_SDK_HOME::${WROOT}/sdk"
-        #echo "::set-env name=ANDROID_NDK_HOME::${WROOT}/ndk"
+        echo "::set-env name=ANDROID_SDK_HOME::${WROOT}/sdk"
+        echo "::set-env name=ANDROID_NDK_HOME::${WROOT}/ndk"
         #echo "::set-env name=ANDROID_NDK_VERSION::r20b"
         #echo "::set-env name=ANDROID_VERSION::28"
         #echo "::set-env name=ANDROID_BUILD_TOOLS_VERSION::28.0.3"
