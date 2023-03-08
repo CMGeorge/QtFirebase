@@ -5,6 +5,7 @@ package ro.wesell.QtMessagingDemo;
 //import com.google.firebase.messaging.FirebaseMessaging;
 //import com.google.firebase.FirebaseApp;
 ////import com.firebase.client.Firebase;
+import java.util.Set;
 
 import org.qtproject.qt.android.bindings.QtApplication;
 import org.qtproject.qt.android.bindings.QtActivity;
@@ -12,7 +13,8 @@ import org.qtproject.qt.android.bindings.QtActivity;
 
 import android.util.*;
 import android.util.Log;
-
+import android.app.NotificationManager;
+import android.app.NotificationChannel;
 
 // Messaging support
 import android.os.Bundle;
@@ -42,12 +44,12 @@ public class Application extends QtActivity{
             Log.d(QtApplication.QtTAG, "MyActivity constructor called");
             m_instance = this;
             // Bundle extras = getIntent().getExtras();
-            
+
             // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
-            //     String channelId = "my_channel_id";
-            //     String channelName = "My Channel Name";
-            //     String channelDescription = "My Channel Description";
+            //     String channelId = "FirebaseAppChannel";
+            //     String channelName = "Demo Channel";
+            //     String channelDescription = "Receiving notifications while app is in background";
             //     int importance = NotificationManager.IMPORTANCE_DEFAULT;
             //     NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
             //     channel.setDescription(channelDescription);
@@ -86,30 +88,60 @@ public class Application extends QtActivity{
            * a workaround, we override onNewIntent so that it forwards the intent to the C++ library's
            * service which in turn forwards the data to the native C++ messaging library.
            */
+
         @Override
-        protected void onNewIntent(Intent intent) {
+          protected void onNewIntent(Intent intent) {
             // If we do not have a 'from' field this intent was not a message and should not be handled. It
             // probably means this intent was fired by tapping on the app icon.
-            Log.d(QtApplication.QtTAG,"New intent is here...");
-            if (intent.getExtras() == null) {
-                }else{
             Bundle extras = intent.getExtras();
+            // if (extras != null && !extras.isEmpty()) {
+            //     // Get all the keys and their corresponding values in the data payload
+            //     Set<String> keys = extras.keySet();
+            //     for (String key : keys) {
+            //         Log.d(TAG, "Key: " + key + ", Value: " + extras.getString(key));
+            //     }
+            // }
+    
             String from = extras.getString(EXTRA_FROM);
             String messageId = extras.getString(EXTRA_MESSAGE_ID_KEY);
-
             if (messageId == null) {
-                messageId = extras.getString(EXTRA_MESSAGE_ID_KEY_SERVER);
+              messageId = extras.getString(EXTRA_MESSAGE_ID_KEY_SERVER);
             }
-
             if (from != null && messageId != null) {
-                Intent message = new Intent(this, MessageForwardingService.class);
-                message.setAction(MessageForwardingService.ACTION_REMOTE_INTENT);
-                message.putExtras(intent);
-                startService(message);
+              Intent message = new Intent(this, MessageForwardingService.class);
+              message.setAction(MessageForwardingService.ACTION_REMOTE_INTENT);
+              message.putExtras(intent);
+              message.setData(intent.getData());
+              MessageForwardingService.enqueueWork(this, message);
             }
-        }
             setIntent(intent);
+          }
 
-        }
+
+        // @Override
+        // protected void onNewIntent(Intent intent) {
+        //     // If we do not have a 'from' field this intent was not a message and should not be handled. It
+        //     // probably means this intent was fired by tapping on the app icon.
+        //     Log.d(QtApplication.QtTAG,"New intent is here...");
+        //     if (intent.getExtras() == null) {
+        //         }else{
+        //     Bundle extras = intent.getExtras();
+        //     String from = extras.getString(EXTRA_FROM);
+        //     String messageId = extras.getString(EXTRA_MESSAGE_ID_KEY);
+
+        //     if (messageId == null) {
+        //         messageId = extras.getString(EXTRA_MESSAGE_ID_KEY_SERVER);
+        //     }
+
+        //     if (from != null && messageId != null) {
+        //         Intent message = new Intent(this, MessageForwardingService.class);
+        //         message.setAction(MessageForwardingService.ACTION_REMOTE_INTENT);
+        //         message.putExtras(intent);
+        //         startService(message);
+        //     }
+        // }
+        //     setIntent(intent);
+
+        // }
 
 }
