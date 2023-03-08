@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    qputenv("QML_IMPORT_TRACE", "1");
+//    qputenv("QML_IMPORT_TRACE", "1");
 //    set_qt_environment();
     QGuiApplication app(argc, argv);
 

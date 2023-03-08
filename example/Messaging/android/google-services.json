@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "663619678469",
+    "project_id": "qtfirebasedemo-6d9df",
+    "storage_bucket": "qtfirebasedemo-6d9df.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663619678469:android:f7e8770ef278fe096c476c",
+        "android_client_info": {
+          "package_name": "ro.wesell.QtMessagingDemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663619678469-ncbdib1qmhlbo8e1itg5o048nr9bb56d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAG1-_xG9kA9yEoKSAszvLbS88ZQDqc0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663619678469-ncbdib1qmhlbo8e1itg5o048nr9bb56d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

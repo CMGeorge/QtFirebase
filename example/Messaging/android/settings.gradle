@@ -1,0 +1,4 @@
+//gradle.ext.firebase_cpp_sdk_dir = "$settingsDir/../../../external/FirebaseSDK-10.3.0/"
+//includeBuild "$firebase_cpp_sdk_dir"
+gradle.ext.firebase_cpp_sdk_dir = "/Users/cmgeorge/Dev/REEA/Qt/EasyMenu/external/QtFirebase/external/FirebaseSDK-10.3.0"
+

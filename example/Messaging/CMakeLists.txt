@@ -1,3 +1,5 @@
+#In the firebase_messaging_cpp.aar archive there is an AndroidManifest.xml file which declares FCM's default ListenerService. This manifest is normally merged with the project specific manifest which is how the ListenerService is able to run. This ListenerService needs to replaced with the cusom listener service. That is accomplished by removing the default ListenerService and adding the custom Service, which can be done with the following lines your projects AndroidManifest.xml file:
+
 cmake_minimum_required(VERSION 3.24)
 SET(PROJECT_NAME "MessagingDemo")
 
@@ -12,6 +14,7 @@ find_package(Qt6
 )
 qt6_add_executable(${PROJECT_NAME}
     main.cpp
+#    pushnotificationsupport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Helper.swift
 )
 
@@ -30,7 +33,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 #    SOURCES
 #        ${CMAKE_CURRENT_SOURCE_DIR}/../../Helper.swift
 #)
-qt6_add_qml_module(${PROJECT_NAME}QML
+qt6_add_qml_module(${PROJECT_NAME}QML STATIC
     URI "/"
     VERSION 1.0
     QML_FILES
@@ -44,7 +47,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtFirebase
     QtFirebaseplugin
     ${PROJECT_NAME}QML
-#    ${PROJECT_NAME}QMLplugin
+    ${PROJECT_NAME}QMLplugin
+)
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+        QT_ANDROID_PACKAGE_NAME "ro.wesell"
+        QT_ANDROID_VERSION_CODE "31"
+        QT_ANDROID_VERSION_NAME ${PROJECT_NAME}
+        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android/
+    #    QT_ANDROID_EXTRA_LIBS "${ANDROID_EXTRA_LIBS}"
 )
 qt6_import_qml_plugins(${PROJECT_NAME}QML)
 add_dependencies(${PROJECT_NAME} QtFirebase)

@@ -250,7 +250,11 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 #TODO: Construct version from project version major+minor
 #also maybe is not ok this there.. shoukd be removed...
-add_library(QtFirebase)
+SET(FB_MODE "")
+if (ANDROID)
+#    SET(FB_MODE STATIC)
+endif()
+add_library(QtFirebase ${FB_MODE})
 if (IOS)
 #    set_target_properties(${PROJECT_NAME} PROPERTIES
 #            XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/QtFirebase-Bridging-Header.h"
@@ -300,7 +304,6 @@ if (IOS)
 
 else()
 endif()
-
 qt6_add_qml_module(QtFirebase
     URI "ro.wesell.firebase"
     VERSION 1.0
