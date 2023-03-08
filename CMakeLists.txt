@@ -255,6 +255,7 @@ if (ANDROID)
 #    SET(FB_MODE STATIC)
 endif()
 add_library(QtFirebase ${FB_MODE})
+set_target_properties(QtFirebase PROPERTIES FIREBASE_IOS_SDK_VERSIONED ${FIREBASE_IOS_SDK_VERSIONED})
 if (IOS)
 #    set_target_properties(${PROJECT_NAME} PROPERTIES
 #            XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/QtFirebase-Bridging-Header.h"
