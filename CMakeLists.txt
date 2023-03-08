@@ -127,6 +127,8 @@ if (NOT CMAKE_FIREBASE_SDK_PATH)
 
 message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_VERSION}")
     message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_FIREBASE_SDK_LIBDIR}")
+else()
+    SET(CMAKE_FIREBASE_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/FirebaseSDK-${FIREBASE_VERSION}")
 endif()
 
 
