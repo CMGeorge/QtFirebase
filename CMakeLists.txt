@@ -24,12 +24,28 @@ function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
   set(XCFRAMEWORK_PATH "${FIREBASE_IOS_SDK}/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
 
   # Add the XCFramework to the link directories for all architectures
-  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+  if (CMAKE_OSX_SYSROOT MATCHES ".*iphonesimulator.*")
+    foreach(arch IN ITEMS "ios-arm64_i386_x86_64-simulator" "ios-arm64_x86_64-simulator")
+        link_directories(${XCFRAMEWORK_PATH}/${arch})
+        # Add the header search path for all architectures
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+          "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
+        )
+        # Add the framework directory to the include path
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+          "${XCFRAMEWORK_PATH}/${arch}"
+        )
+        # Link against the XCFramework for all architectures
+        target_link_libraries(${TARGET_NAME} PRIVATE
+          "-framework ${FRAMEWORK_NAME}"
+          "-F${XCFRAMEWORK_PATH}/${arch}"
+        #      "-arch" "${arch}"
+        )
+    endforeach()
+  else()
+    foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
     link_directories(${XCFRAMEWORK_PATH}/${arch})
-  endforeach()
-
-  # Add the header search path for all architectures
-  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+    # Add the header search path for all architectures
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
       "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
     )
@@ -37,16 +53,33 @@ function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
       "${XCFRAMEWORK_PATH}/${arch}"
     )
-  endforeach()
-
-  # Link against the XCFramework for all architectures
-  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+    # Link against the XCFramework for all architectures
     target_link_libraries(${TARGET_NAME} PRIVATE
       "-framework ${FRAMEWORK_NAME}"
       "-F${XCFRAMEWORK_PATH}/${arch}"
-#      "-arch" "${arch}"
+    #      "-arch" "${arch}"
     )
-  endforeach()
+    endforeach()
+endif()
+#  # Add the header search path for all architectures
+#  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+#    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+#      "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
+#    )
+#    # Add the framework directory to the include path
+#    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
+#      "${XCFRAMEWORK_PATH}/${arch}"
+#    )
+#  endforeach()
+
+#  # Link against the XCFramework for all architectures
+#  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
+#    target_link_libraries(${TARGET_NAME} PRIVATE
+#      "-framework ${FRAMEWORK_NAME}"
+#      "-F${XCFRAMEWORK_PATH}/${arch}"
+##      "-arch" "${arch}"
+#    )
+#  endforeach()
 
 
 #  add_library(${FRAMEWORK_NAME} SHARED IMPORTED)
@@ -366,7 +399,6 @@ target_link_libraries(QtFirebase PRIVATE
     "-framework SystemConfiguration"
 )
 endif()
-message("EXTRAAAAAAA ${${EXTRA_LIBS}}")
 #add_dependencies(QtFirebase FirebaseSDKFromGoogle)
 
 
