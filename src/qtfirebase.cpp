@@ -107,6 +107,9 @@ void QtFirebase::requestInit()
 {
     if(!PlatformUtils::getNativeWindow()) {
         qDebug() << self << "::requestInit" << "no native UI pointer";
+#ifdef Q_OS_MAC
+        _initTimer->stop();
+#endif
         return;
     }
 

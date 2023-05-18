@@ -100,6 +100,28 @@ void QtFirebaseMessaging::init()
 #else
     setReady();
 #endif
+
+#ifdef Q_OS_ANDROID
+    static bool connectionDone = false;
+    static bool appAlreadyBackgrounded = false;
+    if (!connectionDone) {
+        connectionDone = true;
+        connect(qApp, &QGuiApplication::applicationStateChanged, this, [this] (Qt::ApplicationState state) {
+            qDebug() << "App state changed:" << qApp->applicationState();
+            if (state == Qt::ApplicationSuspended) {
+                appAlreadyBackgrounded = true;
+                return;
+            }
+
+            if (state == Qt::ApplicationActive && appAlreadyBackgrounded) {
+                qInfo() << "Reinit firebase messaging to trigger notification";
+                ::messaging::Terminate();
+                ::messaging::Initialize(*qFirebase->firebaseApp(), _listener);
+                return;
+            }
+        });
+    }
+#endif
 }
 
 void QtFirebaseMessaging::subscribe(const QString &topic)
@@ -181,7 +203,7 @@ void MessageListener::OnTokenReceived(const char *token)
 void MessageListener::OnMessage(const messaging::Message &message)
 {
     QVariantMap data;
-
+    qDebug()<<"Get Message "<<message.notification;
     const auto notification = message.notification;
     if (notification) {
         const QMap<QString, QString> notificationData {

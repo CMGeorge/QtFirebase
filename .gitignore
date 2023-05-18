@@ -43,3 +43,4 @@ Makefile*
 CMakeLists.txt.user
 
 FirebaseSDK
+external

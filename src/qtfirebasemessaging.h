@@ -11,9 +11,10 @@
 #include <QVariantMap>
 
 #include <QQmlParserStatus>
+#include <QtQmlIntegration>
 
 // https://github.com/firebase/firebase-cpp-sdk/pull/667
-#if (QTFIREBASE_FIREBASE_VERSION >= QTFIREBASE_FIREBASE_VERSION_CHECK(7, 0, 0)) && (QTFIREBASE_FIREBASE_VERSION < QTFIREBASE_FIREBASE_VERSION_CHECK(8, 6, 0))
+#if (QTFIREBASE_FIREBASE_VERSION >= QTFIREBASE_FIREBASE_VERSION_CHECK(7, 0, 0)) && (QTFIREBASE_FIREBASE_VERSION < QTFIREBASE_FIREBASE_VERSION_CHECK(18, 6, 0))
 #ifdef Q_OS_ANDROID
 #define QTFIREBASE_ANDROID_FIX
 #endif
@@ -29,6 +30,7 @@ class MessageListener;
 class QtFirebaseMessaging : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
+    QML_NAMED_ELEMENT(FirebaseMessaging)
     Q_DISABLE_COPY(QtFirebaseMessaging)
     Q_INTERFACES(QQmlParserStatus)
 
