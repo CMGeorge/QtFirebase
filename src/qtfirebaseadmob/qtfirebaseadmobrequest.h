@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <QObject>
 #include <QDateTime>
-
+#include <QtQmlIntegration>
 #include "qtfirebaseadmobtestdevices.h"
 
 #include "firebase/admob.h"
@@ -12,7 +12,7 @@
 class QtFirebaseAdMobRequest : public QObject
 {
     Q_OBJECT
-
+    QML_NAMED_ELEMENT(AdMobRequest)
     Q_PROPERTY(int gender READ gender WRITE setGender NOTIFY genderChanged)
     Q_PROPERTY(int childDirectedTreatment READ childDirectedTreatment WRITE setChildDirectedTreatment NOTIFY childDirectedTreatmentChanged)
     Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged)

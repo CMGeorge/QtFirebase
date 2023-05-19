@@ -17,6 +17,7 @@
 
 #include <QDebug>
 #include <QObject>
+#include <QtQmlIntegration>
 
 /*
  * AdMob (Base singleton object)
@@ -24,7 +25,7 @@
 class QtFirebaseAdMob : public QObject
 {
     Q_OBJECT
-
+    QML_NAMED_ELEMENT(AdMob)
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(QString appId READ appId WRITE setAppId NOTIFY appIdChanged)
 

@@ -2,6 +2,8 @@
 #include <QtCore>
 
 #import "Firebase/Firebase.h"
+#import <FirebaseCore.h>
+
 
 @interface QIOSApplicationDelegate : UIResponder <UIApplicationDelegate>
 @end
@@ -17,8 +19,9 @@
     Q_UNUSED(application);
     Q_UNUSED(launchOptions);
     // Use Firebase library to configure APIs
-    //[FIRApp configure];
-
+    
+    [FIRApp configure];
+//[FBLPromises onQ]
     return YES;
 }
 

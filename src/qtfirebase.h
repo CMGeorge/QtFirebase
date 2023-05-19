@@ -4,8 +4,8 @@
 #if defined(qFirebase)
 #undef qFirebase
 #endif
-#define qFirebase (static_cast<QtFirebase *>(QtFirebase::instance()))
-
+//#define qFirebase (static_cast<QtFirebase *>(QtFirebase::instance()))
+#define qFirebase (QtFirebase::instance())
 #include "platformutils.h"
 
 #include "firebase/version.h"

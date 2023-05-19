@@ -19,9 +19,9 @@
 #if defined(QTFIREBASE_BUILD_ALL) || defined(QTFIREBASE_BUILD_MESSAGING)
 
 #if defined(QTFIREBASE_STUB_BUILD)
-#include "stub/src/qtfirebasemessaging.h"
+#include "../stub/src/qtfirebasemessaging.h"
 #else
-#include "src/qtfirebasemessaging.h"
+#include "qtfirebasemessaging.h"
 #endif
 
 # endif // QTFIREBASE_BUILD_MESSAGING
