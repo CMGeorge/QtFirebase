@@ -25,9 +25,9 @@ set(CMAKE_AUTOMOC ON)
 set(QML_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Qt6
     REQUIRED COMPONENTS
-    Gui
+    Core
     Qml
-    Quick
+    # Quick
 )
 
 #find_library(SWIFT_CORE_LIBRARY
