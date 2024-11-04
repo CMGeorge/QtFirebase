@@ -26,6 +26,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src)
 if (ANDROID OR IOS)
-add_subdirectory(example)
+#add_subdirectory(example)
 endif()
 
