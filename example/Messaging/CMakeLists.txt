@@ -25,15 +25,16 @@ endif()
 qt6_add_executable(${PROJECT_NAME}
     main.cpp
     ${SWIFT_FILE}
+    # QML_FILES
 )
 target_sources(${PROJECT_NAME} PRIVATE ${GOOGLE_PLIST})
 
-qt6_add_qml_module(${PROJECT_NAME}QML STATIC
-    URI "/"
-    VERSION 1.0
-    QML_FILES
-    main.qml
-)
+# qt6_add_qml_module(${PROJECT_NAME}QML STATIC
+#     URI "/"
+#     VERSION 1.0
+#     QML_FILES
+#     main.qml
+# )
 IF (IOS)
 set_target_properties(${PROJECT_NAME} PROPERTIES
     XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
@@ -49,9 +50,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::Quick
     QtFirebaseLib
-    QtFirebaseLibplugin
-    ${PROJECT_NAME}QML
-    ${PROJECT_NAME}QMLplugin
+
+    #Target "QtFirebaseLibplugin" of type MODULE_LIBRARY may not be linked into
+    #[cmake]   another target.  One may link only to INTERFACE, OBJECT, STATIC or SHARED
+    #[cmake]   libraries, or to executables with the ENABLE_EXPORTS property set.
+    # QtFirebaseLibplugin // Commented for android...
+
+    # ${PROJECT_NAME}QML
+    # ${PROJECT_NAME}QMLplugin
     firebase_app
     firebase_functions
     firebase_messaging
@@ -62,12 +68,12 @@ set_target_properties(${PROJECT_NAME}
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ro.wesell.QtMessagingDemo"
 
     QT_ANDROID_PACKAGE_NAME "ro.wesell"
-    QT_ANDROID_VERSION_CODE "31"
+    QT_ANDROID_VERSION_CODE "33"
     QT_ANDROID_VERSION_NAME ${PROJECT_NAME}
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android/
     #    QT_ANDROID_EXTRA_LIBS "${ANDROID_EXTRA_LIBS}"
 )
 
-qt6_import_qml_plugins(${PROJECT_NAME}QML)
+# qt6_import_qml_plugins(${PROJECT_NAME}QML)
 
 add_dependencies(${PROJECT_NAME} QtFirebaseLib)

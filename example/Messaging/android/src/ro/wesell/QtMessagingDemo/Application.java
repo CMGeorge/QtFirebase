@@ -35,13 +35,13 @@ public class Application extends QtActivity{
     }
     public static String SearchForToken(){
 //        m_instance.pushNotificationID = FirebaseInstanceId.getInstance().getToken();
-        Log.d(QtApplication.QtTAG, "InstanceID token: " + m_instance.pushNotificationID);
+        Log.d(TAG, "InstanceID token: " + m_instance.pushNotificationID);
         return m_instance.pushNotificationID;
     }
     public Application()
         {
 //            FirebaseApp.initializeApp(this);;
-            Log.d(QtApplication.QtTAG, "MyActivity constructor called");
+            Log.d(TAG, "MyActivity constructor called");
             m_instance = this;
             // Bundle extras = getIntent().getExtras();
 
