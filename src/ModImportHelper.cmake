@@ -41,6 +41,9 @@ function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
     endif()
 
     target_link_libraries(${TARGET_NAME} PRIVATE ${IMPORTED_TARGET_NAME})
+    # message("target_link_libraries(\${APP_NAME}App PRIVATE
+    #    \"-force_load ${CMAKE_SOURCE_DIR}/external/ios/firebase/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework/ios-arm64/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}\"
+    #)")
 endfunction()
 
 # function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
