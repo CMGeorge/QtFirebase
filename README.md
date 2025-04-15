@@ -1,9 +1,9 @@
 <img src="docs/img/logo.png" align="right" />
 
 # QtFirebase
-An effort to bring the Firebase C++ API to Qt 5
+An effort to bring the Firebase C++ API to Qt 6 using cmake
 
-QtFirebase aims to bring all the features of the Firebase C++ SDK to Qt 5 - both as C++ wrappers and as QML components.
+QtFirebase aims to bring all the features of the Firebase C++ SDK to Qt 6 - both as C++ wrappers and as QML components.
 
 Please bear in mind that the Firebase C++ SDK currently only supports the mobile platforms Android and iOS.
 
