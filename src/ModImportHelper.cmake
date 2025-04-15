@@ -1,96 +1,91 @@
 SET(FIREBASE_IOS_SDK "${CMAKE_SOURCE_DIR}/external/ios/firebase")
 SET(FIREBASE_IOS_SDK_VERSIONED "${CMAKE_SOURCE_DIR}/external/ios/firebase-${FIREBASE_IOS_VERSION}")
 function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
-    # Set the path to the XCFramework
     set(XCFRAMEWORK_PATH "${FIREBASE_IOS_SDK}/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
-    # Add the XCFramework to the link directories for all architectures
-    if (CMAKE_OSX_SYSROOT MATCHES ".*iphonesimulator.*")
-        foreach(arch IN ITEMS "ios-arm64_i386_x86_64-simulator" "ios-arm64_x86_64-simulator")
-            link_directories(${XCFRAMEWORK_PATH}/${arch})
-            # Add the header search path for all architectures
-            target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
-                "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
-            )
-        # Add the framework directory to the include path
-        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
-            "${XCFRAMEWORK_PATH}/${arch}"
-        )
-        # Link against the XCFramework for all architectures
-        target_link_libraries(${TARGET_NAME} PRIVATE
-            -framework ${FRAMEWORK_NAME}
-            -F${XCFRAMEWORK_PATH}/${arch}
-            #      "-arch" "${arch}"
-        )
 
-        add_library(${TARGET_NAME} STATIC IMPORTED)
-        set_target_properties(${TARGET_NAME} PROPERTIES IMPORTED_LOCATION "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}")
-
-    endforeach()
+    if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+        set(ARCH_LIST "ios-arm64_x86_64-simulator" "ios-arm64_i386_x86_64-simulator")
     else()
-        foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
-            if (IS_DIRECTORY ${XCFRAMEWORK_PATH}/${arch})
-                link_directories(${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework )
-                # Add the header search path for all architectures
-                target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
-                    "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
-                )
-                # Add the framework directory to the include path
-                target_include_directories(${TARGET_NAME} SYSTEM PUBLIC
-                    "${XCFRAMEWORK_PATH}/${arch}"
-                )
-                # Link against the XCFramework for all architectures
-                message("Link frameword ${FRAMEWORK_NAME} from ${XCFRAMEWORK_PATH}/${arch}")
+        set(ARCH_LIST "ios-arm64")
+    endif()
 
-                #    target_link_libraries(${TARGET_NAME} PUBLIC
-                #        "-F${XCFRAMEWORK_PATH}/${arch}"
-                #        "-framework ${FRAMEWORK_NAME}"
-                #        #      "-arch" "${arch}"
-                #    )
-                target_link_libraries(${TARGET_NAME} PRIVATE
-                    "-ObjC ${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}"
+    set(IMPORTED_TARGET_NAME Firebase_${FRAMEWORK_NAME})
+
+    if(NOT TARGET ${IMPORTED_TARGET_NAME})
+        foreach(ARCH IN LISTS ARCH_LIST)
+            set(FRAMEWORK_DIR "${XCFRAMEWORK_PATH}/${ARCH}/${FRAMEWORK_NAME}.framework")
+            set(FRAMEWORK_BINARY "${FRAMEWORK_DIR}/${FRAMEWORK_NAME}")
+
+            if(EXISTS "${FRAMEWORK_BINARY}")
+                add_library(${IMPORTED_TARGET_NAME} STATIC IMPORTED GLOBAL)
+                set_target_properties(${IMPORTED_TARGET_NAME} PROPERTIES
+                    IMPORTED_LOCATION "${FRAMEWORK_BINARY}"
+                    INTERFACE_INCLUDE_DIRECTORIES "${FRAMEWORK_DIR}/Headers"
+                    FRAMEWORK TRUE
                 )
-        #    message(FATAL_ERROR "Force Load: ${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}")
+
+                # Carefully force load only this framework
+                target_link_libraries(${TARGET_NAME} PRIVATE
+                    "-force_load" "${FRAMEWORK_BINARY}"
+                )
+
+                target_include_directories(${TARGET_NAME} SYSTEM PRIVATE "${FRAMEWORK_DIR}")
+                break()
             endif()
         endforeach()
+
+        if(NOT TARGET ${IMPORTED_TARGET_NAME})
+            message(WARNING "No valid slice found for ${FRAMEWORK_NAME}")
+            return()
+        endif()
     endif()
-    #  # Add the header search path for all architectures
-    #  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
-    #    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
-    #      "${XCFRAMEWORK_PATH}/${arch}/${FRAMEWORK_NAME}.framework/Headers"
-    #    )
-    #    # Add the framework directory to the include path
-    #    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE
-    #      "${XCFRAMEWORK_PATH}/${arch}"
-    #    )
-    #  endforeach()
 
-    #  # Link against the XCFramework for all architectures
-    #  foreach(arch IN ITEMS "ios-arm64" "ios-arm64_armv7")
-    #    target_link_libraries(${TARGET_NAME} PRIVATE
-    #      "-framework ${FRAMEWORK_NAME}"
-    #      "-F${XCFRAMEWORK_PATH}/${arch}"
-    ##      "-arch" "${arch}"
-    #    )
-    #  endforeach()
-
-
-    #  add_library(${FRAMEWORK_NAME} SHARED IMPORTED)
-
-    #  # Set the path to the framework
-    #  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
-    #      IMPORTED_LOCATION ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/${FRAMEWORK_NAME}
-    #  )
-
-    #  # Set the include directories for the framework
-    #  set_target_properties(${FRAMEWORK_NAME} PROPERTIES
-    #      INTERFACE_INCLUDE_DIRECTORIES ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers
-    #  )
-
-    #  # Link the target to your executable or library
-    #  target_link_libraries(${TARGET_NAME} PRIVATE ${FRAMEWORK_NAME})
-    message("Include: ${XCFRAMEWORK_PATH}/ios-arm64/${FRAMEWORK_NAME}.framework/Headers")
-
+    target_link_libraries(${TARGET_NAME} PRIVATE ${IMPORTED_TARGET_NAME})
 endfunction()
+
+# function(add_xcframework_to_target TARGET_NAME CATALOG_NAME FRAMEWORK_NAME)
+#     set(XCFRAMEWORK_PATH "${FIREBASE_IOS_SDK}/${CATALOG_NAME}/${FRAMEWORK_NAME}.xcframework")
+
+#     # Detect platform: device vs simulator
+#     if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+#         set(ARCH_LIST "ios-arm64_x86_64-simulator" "ios-arm64_i386_x86_64-simulator")
+#     else()
+#         set(ARCH_LIST "ios-arm64")
+#     endif()
+
+#     # Create a unique imported target name per framework
+#     set(IMPORTED_TARGET_NAME Firebase_${FRAMEWORK_NAME})
+
+#     # Avoid redefining the target
+#     if(NOT TARGET ${IMPORTED_TARGET_NAME})
+#         foreach(ARCH IN LISTS ARCH_LIST)
+#             set(FRAMEWORK_DIR "${XCFRAMEWORK_PATH}/${ARCH}/${FRAMEWORK_NAME}.framework")
+#             set(FRAMEWORK_BINARY "${FRAMEWORK_DIR}/${FRAMEWORK_NAME}")
+
+#             if(EXISTS "${FRAMEWORK_BINARY}")
+#                 add_library(${IMPORTED_TARGET_NAME} STATIC IMPORTED GLOBAL)
+#                 set_target_properties(${IMPORTED_TARGET_NAME} PROPERTIES
+#                     IMPORTED_LOCATION "${FRAMEWORK_BINARY}"
+#                     INTERFACE_INCLUDE_DIRECTORIES "${FRAMEWORK_DIR}/Headers"
+#                     FRAMEWORK TRUE
+#                 )
+
+#                 # Optional: provide framework search path
+#                 target_include_directories(${TARGET_NAME} SYSTEM PRIVATE "${FRAMEWORK_DIR}")
+#                 break()  # Stop after first valid slice
+#             endif()
+#         endforeach()
+
+#         if(NOT TARGET ${IMPORTED_TARGET_NAME})
+#             message(WARNING "No valid slice found for ${FRAMEWORK_NAME}")
+#             return()
+#         endif()
+#     endif()
+
+#     target_link_libraries(${TARGET_NAME} PRIVATE
+#         "-ObjC"
+#         ${IMPORTED_TARGET_NAME})
+# endfunction()
 
 function (importForMessenging userTarget)
 if (IOS)
@@ -142,5 +137,6 @@ if (IOS)
         "-framework SystemConfiguration"
 
     )
+
 endif()
 endfunction()

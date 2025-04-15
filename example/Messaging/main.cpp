@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
     app.setOrganizationName("REEA");
     app.setOrganizationDomain("ro.wesell");
     QQmlApplicationEngine engine;
-    const QUrl url("qrc:/main.qml");
-
+    const QUrl url("qrc:/qt/qml/MessagingDemo/main.qml");
+    qDebug()<<"Datra for main "<<QDir(":/qt/qml/MessagingDemo").entryList();
     QObject::connect(
                 &engine, &QQmlApplicationEngine::objectCreated, &app,
                 [url](QObject *obj, const QUrl &objUrl) {
@@ -34,9 +34,9 @@ int main(int argc, char *argv[])
     },
     Qt::QueuedConnection);
 
-//    engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
-//    engine.addImportPath(":/");
-//    engine.addImportPath("../../qml");
+   engine.addImportPath(QCoreApplication::applicationDirPath() + "/qml");
+   engine.addImportPath(":/qt/qml");
+   engine.addImportPath("../../qml");
 
     engine.load(url);
 

@@ -28,13 +28,13 @@ qt6_add_executable(${PROJECT_NAME}
     # QML_FILES
 )
 target_sources(${PROJECT_NAME} PRIVATE ${GOOGLE_PLIST})
-
-# qt6_add_qml_module(${PROJECT_NAME}QML STATIC
-#     URI "/"
-#     VERSION 1.0
-#     QML_FILES
-#     main.qml
-# )
+qt_policy(SET QTP0001 NEW)
+qt6_add_qml_module(${PROJECT_NAME}QML STATIC
+    URI "MessagingDemo"
+    VERSION 1.0
+    QML_FILES
+    main.qml
+)
 IF (IOS)
 set_target_properties(${PROJECT_NAME} PROPERTIES
     XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
@@ -50,14 +50,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
     Qt${QT_VERSION_MAJOR}::Quick
     QtFirebaseLib
+    QtFirebaseLibplugin
 
     #Target "QtFirebaseLibplugin" of type MODULE_LIBRARY may not be linked into
     #[cmake]   another target.  One may link only to INTERFACE, OBJECT, STATIC or SHARED
     #[cmake]   libraries, or to executables with the ENABLE_EXPORTS property set.
     # QtFirebaseLibplugin // Commented for android...
 
-    # ${PROJECT_NAME}QML
-    # ${PROJECT_NAME}QMLplugin
+    ${PROJECT_NAME}QML
+    ${PROJECT_NAME}QMLplugin
     firebase_app
     firebase_functions
     firebase_messaging
@@ -73,7 +74,16 @@ set_target_properties(${PROJECT_NAME}
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android/
     #    QT_ANDROID_EXTRA_LIBS "${ANDROID_EXTRA_LIBS}"
 )
-
+# set_target_properties(${PROJECT_NAME} PROPERTIES
+#     LINK_FLAGS "-ObjC"
+# )
+# message(FATAL_ERROR "FOrce load ${CMAKE_SOURCE_DIR}/external/ios/firebase/FirebaseMessaging/FirebaseMessaging.xcframework/ios-arm64/FirebaseMessaging.framework/FirebaseMessaging")
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    "-force_load ${CMAKE_SOURCE_DIR}/external/ios/firebase/FirebaseMessaging/FirebaseMessaging.xcframework/ios-arm64/FirebaseMessaging.framework/FirebaseMessaging"
+)
+# set_target_properties(${PROJECT_NAME} PROPERTIES
+#     XCODE_ATTRIBUTE_OTHER_LDFLAGS "-ObjC"
+# )
 # qt6_import_qml_plugins(${PROJECT_NAME}QML)
 
 add_dependencies(${PROJECT_NAME} QtFirebaseLib)
