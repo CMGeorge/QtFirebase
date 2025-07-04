@@ -1,8 +1,26 @@
 cmake_minimum_required(VERSION 3.24)
 set(QTFIREBASE_VERSION 1.5.1)
 
-SET(FIREBASE_VERSION "12.0.0")
-SET(FIREBASE_IOS_VERSION "10.9.0")
+set(FIREBASE_VERSION "12.0.0")
+set(_FIREBASE_HASHES
+    "12.0.0:4c93af15a386dfa89b446cf5f5e176cef20e41e5a4456738e82be8acd3b3faf5"
+    # "12.1.0:..."  ; add more here
+)
+
+set(FIREBASE_ZIP_HASH "")
+foreach(entry IN LISTS _FIREBASE_HASHES)
+    string(REPLACE ":" ";" parts "${entry}")
+    list(GET parts 0 ver)
+    list(GET parts 1 hash)
+    if(ver STREQUAL FIREBASE_VERSION)
+        set(FIREBASE_ZIP_HASH "${hash}")
+    endif()
+endforeach()
+
+if(NOT FIREBASE_ZIP_HASH)
+    message(FATAL_ERROR "Missing hash for Firebase version ${FIREBASE_VERSION}")
+endif()
+set(FIREBASE_IOS_VERSION "10.9.0")
 
 project(
     QtFirebase

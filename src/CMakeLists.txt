@@ -19,7 +19,8 @@ include(ModImportHelper.cmake)
 
 
 
-set(CMAKE_FIREBASE_SDK_PATH "")
+# set(CMAKE_FIREBASE_SDK_PATH "")
+set(CMAKE_FIREBASE_SDK_PATH "${CMAKE_SOURCE_DIR}/external/FirebaseSDK-${FIREBASE_VERSION}")
 
 set(CMAKE_AUTOMOC ON)
 set(QML_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
@@ -70,7 +71,24 @@ elseif (APPLE)
 elseif (WIN32)
     SET(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR}/win)
 endif()
-if (NOT CMAKE_FIREBASE_SDK_PATH)
+# if (NOT CMAKE_FIREBASE_SDK_PATH)
+if (NOT EXISTS "${CMAKE_FIREBASE_SDK_PATH}")
+
+
+    set(FIREBASE_ZIP_HASH "")
+    foreach(entry IN LISTS _FIREBASE_HASHES)
+        string(REPLACE ":" ";" parts "${entry}")
+        list(GET parts 0 ver)
+        list(GET parts 1 hash)
+        if(ver STREQUAL FIREBASE_VERSION)
+            set(FIREBASE_ZIP_HASH "${hash}")
+        endif()
+    endforeach()
+
+    if(NOT FIREBASE_ZIP_HASH)
+        message(FATAL_ERROR "Missing hash for Firebase version ${FIREBASE_VERSION}")
+    endif()
+
     message("Retrieving firebase sdk first... https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_${FIREBASE_VERSION}.zip")
     set(CMAKE_FIREBASE_SDK_PATH "${CMAKE_SOURCE_DIR}/external/FirebaseSDK-${FIREBASE_VERSION}")
     set(QTFIREBASE_SDK_LIBS_PREFIX "firebase_")
@@ -79,7 +97,7 @@ if (NOT CMAKE_FIREBASE_SDK_PATH)
     FetchContent_Declare(
         FirebaseSDK
         URL "https://dl.google.com/firebase/sdk/cpp/firebase_cpp_sdk_${FIREBASE_VERSION}.zip"
-        # URL_HASH SHA256=9361a51f570d6a5d4779ea1f7e2400eabc593877d587a1587d4b2472af769962
+        URL_HASH SHA256=${FIREBASE_ZIP_HASH}
         DOWNLOAD_EXTRACT_TIMESTAMP OLD
         SOURCE_DIR ${CMAKE_FIREBASE_SDK_PATH}
         UPDATE_DISCONNECTED
@@ -89,6 +107,7 @@ FetchContent_MakeAvailable(FirebaseSDK)
 message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_VERSION}")
 message("We have FIREBASE SDK At ${FirebaseSDKFromGoogle_FIREBASE_SDK_LIBDIR}")
 else()
+    message("We already have the Firebase SDK downloaded. Will ignore now.")
     SET(CMAKE_FIREBASE_SDK_PATH "${CMAKE_SOURCE_DIR}/external/FirebaseSDK-${FIREBASE_VERSION}")
 endif()
 
