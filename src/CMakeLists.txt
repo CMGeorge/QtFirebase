@@ -27,6 +27,7 @@ set(QML_IMPORT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Qt6
     REQUIRED COMPONENTS
     Gui
+    GuiPrivate
     Qml
     Quick
 )
